@@ -61,7 +61,8 @@ func (p *Reader) init(r io.ReaderAt, size int64) error {
 	}
 
 	buf = tocBuf(toc)
-	newFile(nil, &buf)
+	p.parseTOC(nil, &buf)
+
 	/*
 		// Verify we have a data identifier after TOC
 		peekBuf = peekBuf[0:4]
@@ -72,6 +73,25 @@ func (p *Reader) init(r io.ReaderAt, size int64) error {
 	*/
 
 	return nil
+}
+
+func (r *Reader) parseTOC(p *File, b *tocBuf) {
+	f := new(File)
+	r.File = append(r.File, f)
+	f.name = b.string()
+	f.parent = p
+	f.flags = int(b.byte())
+
+	if f.IsDirectory() {
+		f.length = int64(b.uint32())
+		for i := 0; i < int(f.length); i++ {
+			r.parseTOC(f, b)
+		}
+	} else {
+		f.offset = int64(b.uint32())
+		f.length = int64(b.uint32())
+		f.cksum = b.uint32()
+	}
 }
 
 func OpenReader(path string) (*ReadCloser, error) {
@@ -109,6 +129,14 @@ func (f *File) IsDirectory() bool {
 	return int(f.flags)&TypeDir != 0
 }
 
+func (f *File) Size() int64 {
+	return f.length
+}
+
+func (f *File) Cksum() uint32 {
+	return f.cksum
+}
+
 func (f *File) Path() string {
 	if f.parent == nil {
 		return f.name
@@ -116,21 +144,6 @@ func (f *File) Path() string {
 	return f.parent.Path() + "/" + f.name
 }
 
-func newFile(p *File, b *tocBuf) *File {
-	f := new(File)
-	f.name = b.string()
-	f.parent = p
-	f.flags = int(b.byte())
-
-	if f.IsDirectory() {
-		f.length = int64(b.uint32())
-		for i := 0; i < int(f.length); i++ {
-			newFile(f, b)
-		}
-	} else {
-		f.offset = int64(b.uint32())
-		f.length = int64(b.uint32())
-		f.cksum = b.uint32()
-	}
-	return f
+func (f *File) Name() string {
+	return f.name
 }

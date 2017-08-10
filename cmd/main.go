@@ -10,9 +10,13 @@ import (
 func main() {
 	fmt.Println("PAK")
 
-	r, err := pak.OpenReader("data/res.pak")
+	p, err := pak.OpenReader("data/res.pak")
 	if err != nil {
 		log.Fatal("Unable to open file:", err)
 	}
-	r.Close()
+
+	for _, f := range p.File {
+		fmt.Printf("File: %s Size: %d Cksum: 0x%X\n", f.Path(), f.Size(), f.Cksum())
+	}
+	p.Close()
 }
