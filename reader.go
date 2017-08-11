@@ -39,8 +39,8 @@ func (p *Reader) init(r io.ReaderAt, size int64) error {
 	if hdrMagic != string(buf[0:3]) {
 		return ErrNotValidPAK
 	}
+	buf.skip(len(hdrMagic))
 
-	buf = buf[3:]
 	p.version = int(buf.byte())
 	p.dataOffset = int64(buf.uint32())
 	p.dataSize = int64(buf.uint32())

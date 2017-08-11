@@ -23,3 +23,10 @@ func (b *tocBuf) string() string {
 	*b = (*b)[length:]
 	return string(res)
 }
+
+func (b *tocBuf) skip(count int) {
+	if count > len(*b) {
+		count = len(*b)
+	}
+	*b = (*b)[count:]
+}
